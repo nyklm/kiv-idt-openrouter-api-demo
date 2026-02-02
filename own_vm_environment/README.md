@@ -1,6 +1,10 @@
 
 # Experimentální nasazení AI pro opravu studentských prací
 
+- V tuto chvíli HTTP server neběží a musí se spustit přes SSH.
+  - URL webu: http://147.228.173.27:5000
+  - Python aplikace: python3 /home/server_test.py
+
 ## VM na nuada.zcu.cz
 
 - Přihlášení přes SSH lze pouze z univerzitní sítě !!
