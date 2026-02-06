@@ -3,7 +3,10 @@
 
 - V tuto chvíli HTTP server neběží a musí se spustit přes SSH.
   - URL webu: http://147.228.173.27:5000
-  - Python aplikace: python3 /home/server_test.py
+  - Python aplikace:
+    ```
+    python3 /home/server_test.py
+    ```
 
 ## VM na nuada.zcu.cz
 
@@ -16,5 +19,26 @@
   - Dále obsahuje popis nasazení Python aplikace s Flask HTTP serverem 
   - a vytvoření příslušné služby spouštěné při startu systému (přesněji po navázání internetového připojení; plus případný restart aplikace).
 
-- Základní Python aplikace s HTTP serverem je v **python_flask_test_app**.
+- Základní Python aplikace s HTTP serverem je v **app_python_flask_test**.
 
+---------
+
+---------
+
+# Poznámky pro implementaci
+- CW umí udělat export prací, ale neumí import. Místo importu ruční kopírování.
+
+## Současný stav
+
+* Na CW exportuji práce do ZIPu s volbou "Rozbalit ZIPy uvnitř".
+* Dám tento ZIP do input_dir.
+
+* Spustím skript, který:
+  * rozbalí tento ZIP.
+  * projde adresáře jednotlivých studentů a extrahje obsahy všech .cs souborů do jednoho souboru pro každého studenta.
+  
+  * v OpenRouterAPITool je ukázka jak jednu práci studenta vyhodnotit přes OpenRouter API,
+    * poskládá zprávu pro OpenRouter API a odešle jí tam,
+    * odpověď uloží do souboru.
+
+  * TODO - zpracovat všechny práce !!!
