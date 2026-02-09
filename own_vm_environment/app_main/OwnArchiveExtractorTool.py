@@ -117,8 +117,34 @@ class OwnArchiveExtractorTool:
                     print(target)
                     f.write(bio.read())
 
+    #########################################
+
+    @staticmethod
+    def compress_directory_to_zip(compress_dir_path, output_zip_file_path):
+        '''
+        Komprimuje obsah adresare do ZIP archivu.
+        :param compress_dir_path: Adresar, ktery bude komprimovan.
+        :param output_zip_file_path: Cesta k vystupnimu ZIP souboru.
+        '''
+        compress_dir_path = Path(compress_dir_path).resolve()
+        output_zip_file_path = Path(output_zip_file_path).resolve()
+
+        if not compress_dir_path.is_dir():
+            raise ValueError(f"{compress_dir_path} není adresář")
+
+        root_name = compress_dir_path.name
+
+        with zipfile.ZipFile(output_zip_file_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for path in compress_dir_path.rglob("*"):
+                # relativne k adresari, ktery komprimujeme
+                arcname = Path(root_name) / path.relative_to(compress_dir_path)
+                zipf.write(path, arcname)
+
+
+#################################################
 
 # Priklad pouziti:
 # OwnArchiveExtractorTool.extract("data.zip")
 # OwnArchiveExtractorTool.extract("backup.rar", "out/backup")
 # OwnArchiveExtractorTool.extract("logs.7z")
+# OwnArchiveExtractorTool.compress_directory_to_zip("output_dir", "output_dir.zip")

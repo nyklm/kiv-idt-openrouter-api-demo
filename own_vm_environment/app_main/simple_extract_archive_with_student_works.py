@@ -10,14 +10,6 @@ import basic_functions as bf
 from settings import *
 
 
-# nacteni klice z .env souboru - musi byt instalovan dotenv
-import dotenv
-dotenv.load_dotenv()
-# nactu spravny klic
-key_location = os.environ.get("OPENROUTER_API_KEY_VAR_NAME", "not_set")
-OPEN_ROUTER_API_KEY = os.environ.get(key_location, "")
-
-
 #########################################################
 
 # extrahuju ZIP s ulahami studentu
@@ -32,4 +24,4 @@ students_dirs = bf.get_dirs_with_students_code(MAIN_OUTPUT_DIR_PATH)
 # a udelam to pro vsechny studenty
 for student_dir in students_dirs:
     print(f"Zpracovávám adresář: {student_dir}")
-    bf.merge_all_codes_for_one_student(student_dir, OUTPUT_FILE_NAME)
+    bf.merge_all_codes_for_one_student(student_dir, COMPLETE_STUDENT_CODE_FILE_NAME)

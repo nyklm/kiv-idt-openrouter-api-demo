@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 from time import sleep
-
 import requests
-import json
-
 from requests import HTTPError
+import json
+from datetime import datetime
+
 
 
 class OpenRouterAPITool:
@@ -280,9 +280,6 @@ class OpenRouterAPITool:
         :param response: Odpoved z OpenRouter API.
         :return: Zpracovana odpoved.
         '''
-        import pprint
-        pprint.pprint(result_json)
-
         # mam obsah odpovedi s textovou odpovedi
         if ("choices" in result_json and len(result_json["choices"]) > 0
                 and "message" in result_json["choices"][0]
@@ -295,12 +292,119 @@ class OpenRouterAPITool:
 
         return result_content
 
+    @staticmethod
+    def perform_one_whole_analysis(
+            openrouter_api_url,
+            openrouter_api_key,
+            openrouter_api_ai_model,
+            msg_supervisor_file_path,
+            msg_basic_mistakes_file_path,
+            msg_task_description_file_path,
+            msg_task_code_file_path,
+            msg_task_mistakes_file_path,
+            msg_student_code_file_path,
+            output_dir = "tmp_dir",
+            output_message_for_api_json_file_name_part = "tmp_messages_for_api",
+            output_response_from_api_json_file_name_part = "tmp_response_from_api",
+            output_analysis_results_file_name_part = "analysis_results",
+            encodings = "utf-8-sig"
+        ):
+        # ulozim si soucasny datetime pro oznaceni
+        dateString = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # nactu zakladni prompty pro API
+        system_prompt, task_description, task_code = OpenRouterAPITool.load_basic_prompts(
+            msg_supervisor_file_path,
+            msg_basic_mistakes_file_path,
+            msg_task_description_file_path,
+            msg_task_code_file_path,
+            msg_task_mistakes_file_path
+        )
+        # nactu kod studenta
+        students_code = OpenRouterAPITool.read_file(msg_student_code_file_path)  # mela 5 bodu
+
+        # slozim zpravy pro API
+        print("Creating API message...")
+        # V1: nema uveden typ vstupu, vsechno je text
+        # messages = OpenRouterAPITool.create_api_messages_v1(system_prompt, students_code, task_description, task_code, True)
+        # V2: kazda zprava ma urcen typ vstupu "text"
+        messages = OpenRouterAPITool.create_api_messages_v2(
+            system_prompt, students_code, task_description, task_code, True
+        )
+
+        # pprint.pprint(messages)
+        # ulozim zpravy pro API do JSON souboru (jen pro kontrolu),
+        # jen pokud mam nazev
+        if output_message_for_api_json_file_name_part:
+            tmpName = dateString +"_"+ output_message_for_api_json_file_name_part +".json"
+            tmpName = os.path.join(output_dir, tmpName)
+            with open(tmpName, "w", encoding=encodings) as f:
+                json.dump(messages, f, ensure_ascii=False, indent=4, sort_keys=False)
+
+        # exit()
+
+        # volam OpenRouter API pro analyzu
+        counter = 1
+        limit = 5
+        while counter <= limit:
+            print("Analyzing with via OpenRouter...")
+            try:
+                result = OpenRouterAPITool.analyze_with_openrouter(messages, openrouter_api_url, openrouter_api_key, openrouter_api_ai_model)
+
+            except HTTPError as e:
+                # pri techto chybach chci pozadavek opakovat
+                # 429 - too many requests
+                # 402 - payment required (prekroceny limit, ale muze byt i u free modelu)
+                if e.response.status_code == 429 or e.response.status_code == 402:
+                    # pokud je to chyba 429 (too many requests), tak pockam a zkusim to znovu
+                    if e.response.status_code == 429:
+                        print(f"Error: Too many requests (429). Retrying...")
+                    elif e.response.status_code == 402:
+                        print(f"Error: Payment required / quota exceeded (402). Retrying...")
+                    # pockam pred dalsim pokusem
+                    tmp_sleep_time = 60
+                    print(f"Waiting for {tmp_sleep_time} seconds before retrying... [{counter}/{limit}] \n")
+                    counter += 1
+                    sleep(tmp_sleep_time)
+                    continue
+                # pokud je jina chyba, tak ukocim aplikaci
+                else:
+                    print("Error while calling OpenRouter API:")
+                    print(e.response.status_code)
+                    print(e)
+                    return
+            # pokud jsem dosel az sem, tak mam vysledek analyzy
+            break
+
+        # ulozim odpoved pro kontrolu do JSON souboru
+        tmpName = dateString +"_"+ output_response_from_api_json_file_name_part +".json"
+        tmpName = os.path.join(output_dir, tmpName)
+        with open(tmpName, "w", encoding=encodings) as f:
+            json.dump(result, f, ensure_ascii=False, indent=4, sort_keys=False)
+
+        # zpracovani odpovedi
+        analysis = OpenRouterAPITool.process_openrouter_response(result)
+        # pprint.pprint(analysis)
+
+        # doplnim do vystupu info o nastaveni analyzy
+        analysis = openrouter_api_ai_model + "\n" + msg_student_code_file_path + "\n\n" + analysis
+
+        # ulozim analyzu do markdown souboru
+        # pripona je datum a cas ulozeni
+        tmpName = dateString +"_"+ output_analysis_results_file_name_part +".md"
+        tmpName = os.path.join(output_dir, tmpName)
+        OpenRouterAPITool.write_file(tmpName, analysis)
+        print(f"Analysis saved to: {tmpName}")
+
 
 ############################################################
 # Ukazka pouziti
 
 def main():
     import pprint
+
+    ##############
+    # nastaveni
 
     # zakladni nastaveni pro OpenRouter API
     OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -310,7 +414,9 @@ def main():
     # OPENROUTER_API_AI_MODEL = "meta-llama/llama-3.2-3b-instruct:free" # msg-V1
 
     print("POZOR: PLACENY MODEL !!!")
-    OPENROUTER_API_AI_MODEL = "google/gemini-2.5-flash-lite" # msg-V2 # cena $0.10/0.40
+    # OPENROUTER_API_AI_MODEL = "google/gemini-2.5-flash-lite" # msg-V2 # cena $0.10/0.40
+    OPENROUTER_API_AI_MODEL = "google/gemini-2.0-flash-001" # msg-V2 # cena $0.10/0.40
+    # OPENROUTER_API_AI_MODEL = "openai/gpt-4o-mini" # msg-V2 # cena $0.15/0.60
 
     # nacteni klice z .env souboru - musi byt instalovan dotenv
     import dotenv
@@ -328,76 +434,32 @@ def main():
     MSG_TASK_CODE_FILE_PATH = msg_path_prefix + "meta/tasks/01/kod_zadani.md"
     MSG_TASK_MISTAKES_FILE_PATH = msg_path_prefix + "meta/tasks/01/caste_chyby.md"
 
-    # nactu zakladni data pro API
-    system_prompt, task_description, task_code = OpenRouterAPITool.load_basic_prompts(
+    # cesta k souboru studenta
+    MSG_STUDENT_CODE_FILE_PATH = msg_path_prefix + "ukázky/Romova.cs"  # mela 5 bodu
+    # MSG_STUDENT_CODE_FILE_PATH = msg_path_prefix + "ukázky/Vlach.cs"  # mel 2.5 bodu
+
+    ##############
+    # vykonani
+
+    # provedeni jedne kompletni analyzy pro jednoho studenta, v jednom behu,
+    # s ulozenim mezivysledku do JSON souboru a finalni analyzy do markdown souboru.
+    OpenRouterAPITool.perform_one_whole_analysis(
+        OPENROUTER_API_URL,
+        OPENROUTER_API_KEY,
+        OPENROUTER_API_AI_MODEL,
         MSG_SUPERVISOR_FILE_PATH,
         MSG_BASIC_MISTAKES_FILE_PATH,
         MSG_TASK_DESCRIPTION_FILE_PATH,
         MSG_TASK_CODE_FILE_PATH,
-        MSG_TASK_MISTAKES_FILE_PATH
+        MSG_TASK_MISTAKES_FILE_PATH,
+        MSG_STUDENT_CODE_FILE_PATH,
+        output_dir = "tmp_dir",
+        output_message_for_api_json_file_name_part = "tmp_messages_for_api",
+        output_response_from_api_json_file_name_part = "tmp_response_from_api",
+        output_analysis_results_file_name_part = "analysis_results"
     )
 
-    # nactu kod studenta
-    students_code = OpenRouterAPITool.read_file(msg_path_prefix +"ukázky/Romova.cs")  # mela 5 bodu
-    # students_code = read_file("students/Vlach.cs")   # mel 2.5 bodu
-
-    # slozim zpravy pro API
-    print("Creating API message...")
-    # V1: nema uveden typ vstupu, vsechno je text
-    # messages = OpenRouterAPITool.create_api_messages_v1(system_prompt, students_code, task_description, task_code, True)
-    # V2: kazda zprava ma urcen typ vstupu "text"
-    messages = OpenRouterAPITool.create_api_messages_v2(system_prompt, students_code, task_description, task_code, True)
-
-    # pprint.pprint(messages)
-    # ulozim zpravy pro API do JSON souboru (jen pro kontrolu)
-    with open("tmp_messages_for_api.json", "w", encoding="utf-8-sig") as f:
-        json.dump(messages, f, ensure_ascii=False, indent=4, sort_keys=False)
-
-    # exit()
-
-    # volam OpenRouter API pro analyzu
-    counter = 1
-    while True:
-        print("Analyzing with via OpenRouter...")
-        try:
-            result = OpenRouterAPITool.analyze_with_openrouter(messages, OPENROUTER_API_URL, OPENROUTER_API_KEY, OPENROUTER_API_AI_MODEL)
-        except HTTPError as e:
-            # pri techto chabych chci pozadavek opakovat
-            # 429 - too many requests
-            # 402 - payment required (prekroceny limit, ale muze byt i u free modelu)
-            if e.response.status_code == 429 or e.response.status_code == 402:
-                # pokud je to chyba 429 (too many requests), tak pockam a zkusim to znovu
-                if e.response.status_code == 429:
-                    print(f"Error: Too many requests (429). Retrying...")
-                elif e.response.status_code == 402:
-                    print(f"Error: Payment required / quota exceeded (402). Retrying...")
-                # pockam pred dalsim pokusem
-                tmp_sleep_time = 60
-                print(f"Waiting for {tmp_sleep_time} seconds before retrying... [{counter}] \n")
-                counter += 1
-                sleep(tmp_sleep_time)
-                continue
-            # pokud je jina chyba, tak ukocim aplikaci
-            else:
-                print("Error while calling OpenRouter API:")
-                print(e.response.status_code)
-                print(e)
-                return
-        # pokud jsem dosel az sem, tak mam vysledek analyzy
-        break
-
-    # ulozim odpoved pro kontrolu do JSON souboru
-    with open("tmp_response_from_api.json", "w", encoding="utf-8-sig") as f:
-        json.dump(result, f, ensure_ascii=False, indent=4, sort_keys=False)
-
-    # zpracovani odpovedi
-    analysis = OpenRouterAPITool.process_openrouter_response(result)
-    pprint.pprint(analysis)
-
-    # ulozim analyzu do markdown souboru
-    output_file = "tmp_analysis_results.md"
-    OpenRouterAPITool.write_file(output_file, analysis)
-    print(f"Results saved to: {output_file}")
+    print("Done.")
 
 
 if __name__ == "__main__":
