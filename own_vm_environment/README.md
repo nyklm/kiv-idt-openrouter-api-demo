@@ -42,3 +42,23 @@
     * odpověď uloží do souboru.
 
   * TODO - zpracovat všechny práce !!!
+
+--------------
+
+# Experimety
+
+- Zkoušel jsem kód slečny Romové (od nás 5 bodů):
+  - google/gemini-2.5-flash-lite
+    - 4 pokusy se stejným nastavením
+    - identifikovány hlavní problémy (byť jsou triviální)
+    - výstupy se celkem liší po jazykové stránce a detailu nalezených chyb
+    - někdy mírně zavádějící
+    - nejvíce zavádějící bodové hodnocení "správnost řešení" - různé hodnoty.
+      - možná je to špantá otázka, špatně rozhodnutelná.
+    - možná vadí ono "lite"
+  - google/gemini-2.0-flash-001
+    - 4 pokusy se stejným nastavením
+    - stručnější výstup než u 2.5, ale možná to je lepší.
+    - stabilnější bodové hodnocení
+    - přijde mi lepší, než 2.5 lite.
+  - 

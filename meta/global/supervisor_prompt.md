@@ -22,13 +22,16 @@ upozornění na chyby a jemného navádění.
 - aritmetické a logické výrazy
 - podmínky
 - cykly (for, while, do-while)
+- vlastní metody
 - vlastní třídy s konstruktorem a metodami
 - konzolový vstup a výstup
 - souborový vstup a výstup
 - generování náhodných čísel
 - odchytávání nutných výjimek
 
-Použití nepovolené konstrukce je považováno za nesplnění části zadání.
+Pozor:
+- Hlubokou kopii datových struktur provádějte vlastní implementací, nikoli pomocí vestavěných metod nebo knihoven.
+- Použití nepovolené konstrukce je považováno za nesplnění části zadání.
 
 ### Jak hodnotit studentské řešení
 

@@ -13,6 +13,10 @@
 ale pro prvotní testy stačí vytvořit vlastní klíč (pouze nesmíte nastavit limit 0) 
 a používat free modely.
 
+- **POZOR:** Tato chyba může znamenat konec podpory daného modelu (URL je pravděpodobně správná):
+  ```
+  requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://openrouter.ai/api/v1/chat/completions
+  ```
 
 ## Obecné postupy a doporučení
 
@@ -29,6 +33,7 @@ a používat free modely.
   
 
 * Tímto způsobem by měl být formátován vstup do OpenRouter API pro hodnocení kódu studenta:
+  * **POZOR:** Některé modely mají jiný formát, viz stránka modelu na OpenRouter webu, záložka Quickstart.
 ```
   {
     "role": "system",

@@ -4,7 +4,8 @@ import requests
 import json
 
 # zvoleny model v OpenRouter
-SELECTED_MODEL = "google/gemini-2.0-flash-exp:free"
+# SELECTED_MODEL = "google/gemini-2.0-flash-exp:free"   # tento uz je bohuzel placeny = jine jmeno
+SELECTED_MODEL = "google/gemma-3-27b-it:free"
 
 
 # nacteni klice z .env souboru - musi byt instalovan dotenv
