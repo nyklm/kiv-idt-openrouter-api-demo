@@ -30,18 +30,22 @@
 
 ## Současný stav
 
+**!!! Popis programu app_main je v app_main/README.md !!!**.
+
 * Na CW exportuji práce do ZIPu s volbou "Rozbalit ZIPy uvnitř".
 * Dám tento ZIP do input_dir.
-
-* Spustím skript, který:
+* Spustím *main.py* skript, který:
   * rozbalí tento ZIP.
-  * projde adresáře jednotlivých studentů a extrahje obsahy všech .cs souborů do jednoho souboru pro každého studenta.
-  
-  * v OpenRouterAPITool je ukázka jak jednu práci studenta vyhodnotit přes OpenRouter API,
+  * projde adresáře jednotlivých studentů a extrahje obsahy všech .cs souborů do jednoho souboru pro každého studenta,
+  * pro každého studenta zavolá OpenRouter API s tímto souborem a uloží odpověď do souboru s analýzou pro každého studenta,
+  * zkomprimuje výstupní adresář do ZIPu.
+
+--------------
+
+* v OpenRouterAPITool je ukázka jak jednu práci studenta vyhodnotit přes OpenRouter API,
     * poskládá zprávu pro OpenRouter API a odešle jí tam,
     * odpověď uloží do souboru.
 
-  * TODO - zpracovat všechny práce !!!
 
 --------------
 
