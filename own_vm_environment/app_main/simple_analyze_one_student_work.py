@@ -10,6 +10,7 @@ from settings import *
 
 # cesta k adresari, kde jsou ulozeny kody studentu
 STUDENT_DIR_PATH = "A123P-Jmeno-PRIJMENI"
+# TODO - zadat dle potreby
 
 
 # nacteni klice z .env souboru - musi byt instalovan dotenv
