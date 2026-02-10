@@ -78,7 +78,7 @@ def merge_all_codes_for_one_student(student_dir, output_file_name):
                     # Relativni cesta od student_dir
                     rel_path = os.path.relpath(file_path, student_dir)
                     # zapis do souboru
-                    out_f.write(f"############ {rel_path} ############\n")  # název souboru
+                    out_f.write(f"#### File: {rel_path}\n")  # nazev souboru
                     try:
                         with open(file_path, "r", encoding="utf-8-sig", errors="ignore") as in_f:
                             content = in_f.read()

@@ -1,5 +1,9 @@
 
-__pycache__/
-
-input_dir/
+input_dir/*
 output_dir/
+tmp_dir/
+
+!input_dir/sem ulozit prace.zip z courseware.txt
+
+
+__pycache__/
