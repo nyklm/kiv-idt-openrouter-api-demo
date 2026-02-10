@@ -5,7 +5,7 @@ import json
 
 # zvoleny model v OpenRouter
 # SELECTED_MODEL = "google/gemini-2.0-flash-exp:free"   # tento uz je bohuzel placeny = jine jmeno
-SELECTED_MODEL = "google/gemma-3-27b-it:free"
+SELECTED_MODEL = "google/gemma-3-27b-it:free"  # msg_v2
 
 
 # nacteni klice z .env souboru - musi byt instalovan dotenv
@@ -53,7 +53,7 @@ def load_students_code():
     return combined_text
 
 
-def create_api_message(system_prompt, student_solution, task_description="", task_code=""):
+def create_api_messages_v1(system_prompt, student_solution, task_description="", task_code=""):
     """
     Create the message structure for the OpenRouter API.
     :param system_prompt (str): The system prompt to guide the model's behavior.
@@ -101,6 +101,70 @@ def create_api_message(system_prompt, student_solution, task_description="", tas
             })
     return messages
 
+def create_api_messages_v2(system_prompt, student_solution, task_description="", task_code="", print_info=False):
+    '''
+    Vytvori strukturu zpravy pro OpenRouter API.
+    :param system_prompt (str): Systemovy prompt pro usmerneni chovani modelu.
+    :param student_solution (str): Odevzdane reseni studenta (kod).
+    :param task_description (str, optional): Popis ulohy. (def.="")
+    :param task_code (str, optional): Vychozi kod pro ulohu. (def.="")
+    '''
+    # messages pro OpenRouter API
+    messages = []
+    # system prompt je vzdy
+    messages.append({
+        # nastaveni modelu, jak se ma chovat (system prompt).
+        # normativni pravidlo - ma nejvyssi prioritu.
+        # jak ma hodnotit, jakym zpusobem ma odpovidat a format odpovedi.
+        # je vhodne mit jeden system prompt !!
+        "role": "system",
+        "content": [{
+                "type": "text",
+                "text": system_prompt
+            }]
+    })
+    # zadani tasks
+    if task_description:
+        messages.append({
+            # zadani je prvni "user" prompt !!
+            "role": "user",
+            "content": [{
+                    "type": "text",
+                    "text": f"ZADÁNÍ ÚLOHY:\n{task_description}"
+                }]
+        })
+    # vychozi kod
+    if task_code:
+        messages.append({
+            # vychozi kod ze zadani je druhy "user" prompt !!
+            "role": "user",
+            "content": [{
+                    "type": "text",
+                    "text": f"VÝCHOZÍ KÓD (student jej měl k dispozici):\n```csharp\n\n{task_code}\n```"
+                }]
+        })
+    # odevzdane reseni studenta
+    messages.append({
+        # reseni je dalsi "user" prompt !!
+        "role": "user",
+        "content": [{
+                "type": "text",
+                "text": f"ODEVZDANÉ ŘEŠENÍ STUDENTA:\n```csharp\n\n{student_solution}\n```"
+            }]
+    })
+
+    if print_info:
+        tmpLen = len(system_prompt)
+        print("System prompt length:", tmpLen, "cca", tmpLen / 4, "tokens.")
+        tmpLen = len(task_description)
+        print("Task description prompt length:", tmpLen, "cca", tmpLen / 4, "tokens.")
+        tmpLen = len(task_code)
+        print("Source code length:", tmpLen, "cca", tmpLen / 4, "tokens.")
+        # pozor, kod spotrebuje vic tokenu
+        tmpLen = len(student_solution)
+        print("Student solution length:", tmpLen, "cca", tmpLen / 2, "tokens.")
+
+    return messages
 
 def analyze_with_openrouter(messages):
     """Send the students code and mistakes to OpenRouter API with Gemini 2.5 Flash."""
@@ -152,23 +216,24 @@ def analyze_with_openrouter(messages):
 
 def main():
     print("Loading system prompt...")
-    supervisor = read_file("meta/global/supervisor_prompt.md")
-    mistakes = read_file("meta/global/caste_chyby.md")
+    supervisor = read_file("../meta/global/supervisor_prompt.md")
+    mistakes = read_file("../meta/global/caste_chyby.md")
     system_prompt = supervisor + "\n\n" + mistakes
     
     print("Loading task prompt...")
-    task_descriptions = read_file("meta/tasks/01/textove_zadani.md")
-    task_code = read_file("meta/tasks/01/kod_zadani.md")
+    task_descriptions = read_file("../meta/tasks/01/textove_zadani.md")
+    task_code = read_file("../meta/tasks/01/kod_zadani.md")
 
     print(task_descriptions)
     
     print("Loading students' code...")
     # TODO .....
-    students_code = read_file("ukázky/Romova.cs")  # mela 5 bodu
+    students_code = read_file("../ukázky/Romova.cs")  # mela 5 bodu
     # students_code = read_file("students/Vlach.cs")   # mel 2.5 bodu
 
     print("Creating API message...")
-    messages = create_api_message(system_prompt, students_code, task_descriptions, task_code)
+    # messages = create_api_messages_v1(system_prompt, students_code, task_descriptions, task_code)
+    messages = create_api_messages_v2(system_prompt, students_code, task_descriptions, task_code)
     # print(message)
 
     with open("tmp_messages_for_api.json", "w", encoding="utf-8-sig") as f:
