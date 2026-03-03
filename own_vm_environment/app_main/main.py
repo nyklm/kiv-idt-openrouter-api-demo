@@ -10,6 +10,7 @@
 from pathlib import Path
 import os
 import time
+import shutil
 
 import basic_functions as bf
 from OwnArchiveExtractorTool import OwnArchiveExtractorTool
@@ -69,6 +70,20 @@ def main():
             print("Analyza zrusena.")
             exit()
 
+    # volba cviceni pro analyzu
+    print("\nVyberte cviceni pro analyzu (cislo 1-12):")
+    answer = input().lower().strip()
+    if answer not in TASKS_DATA:
+        print(f"Pro zvolene cviceni '{answer}' nejsou nastaveny cesty k souborum zadani v settings.\nAnalyza zrusena.")
+        exit()
+
+    print(f"Zahajena analyza pro {answer}. cviceni.")
+
+    # ziskam cesty k souborum pro zvolene cviceni
+    MSG_TASK_DESCRIPTION_FILE_PATH = TASKS_DATA[answer]["description_file_path"]
+    MSG_TASK_CODE_FILE_PATH = TASKS_DATA[answer]["code_file_path"]
+    MSG_TASK_MISTAKES_FILE_PATH = TASKS_DATA[answer]["mistakes_file_path"]
+
 
     #########################################################
     # analyza pro kazdeho studenta pres OpenRouter API
@@ -118,6 +133,22 @@ def main():
     OwnArchiveExtractorTool.compress_directory_to_zip(parent_dir, output_zip_path)
     print(f"Komprimovany adresar: {parent_dir}\nVytvoreny ZIP: {output_zip_path}")
 
+    ##########################################################
+    # smazani rozbalenych dat, necham jen puvodni ZIP a vystupni ZIP
+    # tj. vymazu vsechny adresare ve vystupnim adresari
+
+    print("\nMam vymazat rozbalena data ve vystupnim adresari a ponechat pouze ZIP? (y/n)")
+    answer = input().lower().strip()
+    if answer == "y":
+        for item in os.listdir(MAIN_OUTPUT_DIR_PATH):
+            item_path = os.path.join(MAIN_OUTPUT_DIR_PATH, item)
+            if os.path.isdir(item_path):
+                # rekurzivne smazu adresar
+                shutil.rmtree(item_path)
+                print(f"Smazan adresar: {item_path}")
+    else:
+        print("Rozbalena data ponechana ve vystupnim adresari.")
+        print("Odstrante je pred dalsi analyzou, jinak budou znovu analyzovana!!")
 
 
 if __name__ == "__main__":

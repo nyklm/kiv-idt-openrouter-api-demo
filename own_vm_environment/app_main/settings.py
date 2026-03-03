@@ -46,7 +46,17 @@ Path(MAIN_TMP_DIR_PATH).mkdir(parents=True, exist_ok=True)
 msg_path_prefix = "../../"
 MSG_SUPERVISOR_FILE_PATH = msg_path_prefix + "meta/global/supervisor_prompt.md"
 MSG_BASIC_MISTAKES_FILE_PATH = msg_path_prefix + "meta/global/caste_chyby.md"
-MSG_TASK_DESCRIPTION_FILE_PATH = msg_path_prefix + "meta/tasks/01/textove_zadani.md"
-MSG_TASK_CODE_FILE_PATH = msg_path_prefix + "meta/tasks/01/kod_zadani.md"
-MSG_TASK_MISTAKES_FILE_PATH = msg_path_prefix + "meta/tasks/01/caste_chyby.md"
-
+# data pro jednotliva cviceni
+# - pokud soubor neexistuje, tak jeho nacteni vrati "", tj. neni to problem.
+TASKS_DATA = {
+    "1": {
+        "description_file_path": msg_path_prefix + "meta/tasks/01/textove_zadani.md",
+        "code_file_path": msg_path_prefix + "meta/tasks/01/kod_zadani.md",
+        "mistakes_file_path": msg_path_prefix + "meta/tasks/01/caste_chyby.md"
+    },
+    "2": {
+        "description_file_path": msg_path_prefix + "meta/tasks/02/textove_zadani.md",
+        "code_file_path": msg_path_prefix + "meta/tasks/02/kod_zadani.md",
+        "mistakes_file_path": msg_path_prefix + "meta/tasks/02/caste_chyby.md"
+    }
+}
